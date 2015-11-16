@@ -18,11 +18,11 @@ export default async function () {
         proxy_set_header        X-Forwarded-For \$proxy_add_x_forwarded_for;
 `;
   return {
-    '/tmp/synccloud.frontend/config.json': {
+    '/etc/my-frontend/config.json': {
       content: await key('files/config.json'),
       reload: true
     },
-    '/tmp/nginx/conf.d/nginx.conf': {
+    '/etc/nginx/conf.d/nginx.conf': {
       content: await aw`
 upstream app {
   server localhost:${key('port')};
@@ -75,14 +75,14 @@ server {
 ## Roadmap
  - Optional redis. Use rancher `metadata` section for redis backend replacement
  - Expose backend used with Confn containers for managing service configurations hierarchically
-   ```
-   |-stacks                                
-   |  |-stackA
-   |  |  |-service1                       
-   |  |  |  |-conf.es6                     ConfN configuration template
-   |  |  |  |-arbitrary[@env#version].file Arbitrary file
-   |  |  |  |-config[@env#version].json    Json-file on a service level. May have @env and #version markers
-   |  |  |-compose[@environment].yml       Docker compose file for stack with all it services
-   |  |  |-config.json                     Json-file on a stack level. Will be merged to service-env-version files
-   |  |-stackB
-   ```
+```
+|-stacks                                
+|  |-stackA
+|  |  |-service1                       
+|  |  |  |-conf.es6                     ConfN configuration template. Can be used for bootstraping haproxy, nginx, rabbitmq.conf and etc
+|  |  |  |-arbitrary[@env#version].file Arbitrary file
+|  |  |  |-config[@env#version].json    Json-file on a service level. May have @env and #version markers
+|  |  |-compose[@environment].yml       Docker compose file for stack with all it services
+|  |  |-config.json                     Json-file on a stack level. Will be merged to service-env-version files
+|  |-stackB
+```
