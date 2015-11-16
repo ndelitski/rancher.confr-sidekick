@@ -58,6 +58,10 @@ server {
 }
 ```
 
+### Template section options
+ - `reload` Should parent container will be restarted when file contents change? `Boolean` value. Can be object in a future for specifying container reload behaviour.
+ - `content` Content of configuration file should be populated here
+ 
 ### Predefined template functions
  - `key` get key async
   - `key('self/service/name')` - get name of service from rancher metadata
