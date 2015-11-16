@@ -73,4 +73,6 @@ server {
 
 
 
-
+## Roadmap
+ - Optional redis. Use rancher `metadata` section for redis backend replacement
+  
