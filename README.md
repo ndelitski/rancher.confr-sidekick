@@ -13,17 +13,16 @@ Confn is Сonfd powered by NodeJS :D.
 ## Template
 ```js
 export default async function () {
-  const proxy_set_header = `
-  proxy_set_header        Host            \$host;
-  proxy_set_header        X-Real-IP       \$remote_addr;
-  proxy_set_header        X-Forwarded-For \$proxy_add_x_forwarded_for;
+  const proxy_set_header = `proxy_set_header        Host            \$host;
+        proxy_set_header        X-Real-IP       \$remote_addr;
+        proxy_set_header        X-Forwarded-For \$proxy_add_x_forwarded_for;
 `;
   return {
-    '/etc/synccloud.frontend/config.json': {
-      content: await key('files', 'config.json'),
+    '/tmp/synccloud.frontend/config.json': {
+      content: await key('files/config.json'),
       reload: true
     },
-    '/etc/nginx/conf.d/nginx.conf': {
+    '/tmp/nginx/conf.d/nginx.conf': {
       content: await aw`
 upstream app {
   server localhost:${key('port')};
@@ -32,7 +31,7 @@ upstream app {
 server {
     listen 80;
 
-    client_max_body_size ${key('nginx/maxFileSizeMB')}M;
+    client_max_body_size 100M;
 
     location ~ ^/api {
         proxy_pass ${key('backend')};
@@ -51,24 +50,26 @@ server {
 
     location / {
         proxy_pass http://app;
-        
+
     }
-}
-      `
+}`
     }
   }
 }
-
-
-async function aw(strings, ...values) {
-  let sum = '';
-  for (let frag, i of strings) {
-    sum += frag + (values.length <= i ? await values[i] : '');
-  }
-  return sum;
-}
-
 ```
+
+### Predefined template functions
+ - `key` get key async
+  - `key('self/service/name')` - get name of service from rancher metadata
+  - `key('files/config.json')` - arbitrary path to redis key. transformed to something like this `/conf/:stack/:service/:?environment/:?version/your_path`
+    will search in this order:
+     - /conf/:stack/:service/:environment/:version/your_path
+     - /conf/:stack/:service/:environment/:default_version(for example - master)/your_path
+     - /conf/:stack/:service/:environment/your_path
+     - /conf/:stack/:service/your_path
+     - /conf/:stack/your_path
+     - /conf/your_path
+ - `aw` is a tag function. resolve all promises in template expressions
 
 
 
