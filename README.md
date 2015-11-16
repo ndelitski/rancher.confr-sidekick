@@ -72,7 +72,17 @@ server {
  - `aw` is a tag function. resolve all promises in template expressions
 
 
-
 ## Roadmap
  - Optional redis. Use rancher `metadata` section for redis backend replacement
-  
+ - Expose backend used with Confn containers for managing service configurations hierarchically
+   ```
+   |-stacks                                
+   |  |-stackA
+   |  |  |-service1                       
+   |  |  |  |-conf.es6                     ConfN configuration template
+   |  |  |  |-arbitrary[@env#version].file Arbitrary file
+   |  |  |  |-config[@env#version].json    Json-file on a service level. May have @env and #version markers
+   |  |  |-compose[@environment].yml       Docker compose file for stack with all it services
+   |  |  |-config.json                     Json-file on a stack level. Will be merged to service-env-version files
+   |  |-stackB
+   ```
