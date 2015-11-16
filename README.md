@@ -1,6 +1,6 @@
-# Confn
+# rancher-conf-sidekick
 
-Confn is Сonfd powered by NodeJS :D.
+Configure Rancher service with a  `rancher-conf-sidekick` sidekick. Auto-restart main container, fetch template and settings directly from rancher-metadata, apply template changes on the fly. Combine with `rancher-conf-backend` to manage all service configurations from one place, one-click to apply, hierarchicaly stored (stack/service/environment:version)
 
 ## under development
 
