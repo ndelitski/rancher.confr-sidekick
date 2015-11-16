@@ -6,14 +6,14 @@ Confn is Сonfd powered by NodeJS :D.
 
 ## Features
  - Who love JS and write code in template. I really hate to write this unreadable shit:
- ```
- {{with get "/self/service/name"}}{{if eq "elasticsearch-masters" .Value}}
- discovery.zen.ping.unicast.hosts: {{range ls "/self/service/containers"}}{{ $containerName := getv (printf "/self/service/containers/%s" .)}}
-   - {{getv (printf "/containers/%s/primary_ip" $containerName)}}{{end}}
- {{else}}
- discovery.zen.ping.unicast.hosts: ["es-masters"]
- {{end}}{{end}}
- ```
+```
+{{with get "/self/service/name"}}{{if eq "elasticsearch-masters" .Value}}
+discovery.zen.ping.unicast.hosts: {{range ls "/self/service/containers"}}{{ $containerName := getv (printf "/self/service/containers/%s" .)}}
+- {{getv (printf "/containers/%s/primary_ip" $containerName)}}{{end}}
+{{else}}
+discovery.zen.ping.unicast.hosts: ["es-masters"]
+{{end}}{{end}}
+```
  - No need to build/manage config containers. Manage configurations not containers! Change Confn template and conf-container will receive new version instantly! Change conf option in UI - changes in an application already processed!
  - Rancher-friendly. Intended to use only as configuration sidekick in Rancher environment for confd replacement.
  - Auto-reload configured application. Gracefully restart container paired with a sidekick when configuration changes (have restart options - signal, timeout). 
