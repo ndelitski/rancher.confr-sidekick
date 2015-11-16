@@ -6,9 +6,9 @@ Confn is Сonfd powered by NodeJS :D.
 
 ## Features
  - Who love JS and write code in template.
+ - Rancher-friendly. Intended to use only as configuration sidekick in Rancher environment for confd replacement.
  - Auto-reload configured application. Gracefully restart container paired with a sidekick when configuration changes (have restart options - signal, timeout). 
  - Environment-aware. Keys are fetched in `environment<-stack<-service<-version` order. You can specify some common settings on stack level and override some of them on service or version level 
- - Rancher-friendly. Intended to use only as configuration sidekick in Rancher environment for confd replacement.
 
 ## Template
 ```js
