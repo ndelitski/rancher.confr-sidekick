@@ -59,7 +59,7 @@ server {
 ```
 
 ### Template section options
- - `reload` Should parent container will be restarted when file contents change? `Boolean` value. Can be object in a future for specifying container reload behaviour.
+ - `reload` Should parent container will be restarted when file contents change? `Boolean` value. Can be object in a future for specifying container reload behaviour. Reload options will be `signal`, `timeout`, `service-names`(when need to restart main container and another sidekick).
  - `content` Content of configuration file should be populated here
  
 ### Predefined template functions
@@ -79,6 +79,7 @@ server {
 
 ## Roadmap
  - Optional redis. Use rancher `metadata` section for redis backend replacement
+ - ??? Ability to restart other services when this service have been restarted.
  - Expose backend used with Confn containers for managing service configurations hierarchically
 ```
 |-stacks                                
