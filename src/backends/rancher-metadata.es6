@@ -4,7 +4,7 @@ import {merge, omit} from 'lodash';
 import $url from 'url';
 
 export default class RancherMetadataClient {
-  constructor({address = 'rancher-metadata'}) {
+  constructor({address = 'rancher-metadata'} = {}) {
     this.address = address;
   }
 
@@ -49,17 +49,22 @@ export default class RancherMetadataClient {
   async getEnvironment() {
     return await this.getJson('self/environment');
   }
-  async whereAmI() {
-    //const service = await this.getService();
-    //const stack = await this.getStack();
-    //const version = await this.getVersion();
-    //const environment = await this.getEnvironment();
-    //
-    //return {stack, version, environment, service};
-    return {
-      stack: 'frontend',
-      service: 'frontend',
-      environment: 'staging'
-    }
+  async getDeploymentUnitLabel() {
+    return await this.get('self/container/labels/io.rancher.service.deployment.unit');
   }
+  async getLocation() {
+    const service = (await this.getService()).replace(/-conf$/, ''); // dirty hack so far
+    const stack = await this.getStack();
+    const version = await this.getVersion();
+    const environment = await this.getEnvironment();
+
+    return {stack, version, environment, service};
+
+    //return {
+    //  stack: 'frontend',
+    //  service: 'frontend',
+    //  environment: 'staging'
+    //}
+  }
+
 }

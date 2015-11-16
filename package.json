@@ -4,7 +4,7 @@
   "description": "Confd inspired configuration generator",
   "main": "bin/confn.js",
   "scripts": {
-    "start": "node bin/rancher-dns-discovery.js",
+    "start": "node bin/confn.js",
     "test": "./node_modules/.bin/mocha $(find test -name '*.es6' | sort)",
     "build": "babel src/ -d dist"
   },
@@ -14,7 +14,9 @@
     "axios": "^0.7.0",
     "babel-core": "^5.8.33",
     "bluebird": "^3.0.5",
+    "dockerode": "^2.2.3",
     "lodash": "^3.10.1",
+    "mkdirp": "^0.5.1",
     "redis": "^2.3.0"
   },
   "devDependencies": {
