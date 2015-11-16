@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {info, trace, error} from './log';
+import {info, debug, error} from './log';
 import {pairs, keys} from 'lodash';
 import crypto from 'crypto';
 import {promisify} from 'bluebird';

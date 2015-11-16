@@ -2,7 +2,7 @@ import assert from 'assert';
 import redisLib from 'redis';
 import {first, compact, isArray} from 'lodash';
 import {promisifyAll, delay, all} from 'bluebird';
-import {info, trace, error} from '../log';
+import {info, debug, error} from '../log';
 
 promisifyAll(redisLib.RedisClient.prototype);
 promisifyAll(redisLib.Multi.prototype);
@@ -21,12 +21,12 @@ export default class RedisClient {
   }
 
   _buffer(v) {
-    trace(`${v} added to buffer`);
+    debug(`${v} added to buffer`);
     if (this._bufferedKeys.length == 0) {
-      trace('start buffering');
+      debug('start buffering');
       this._buffering = (async () => {
         await delay(RedisClient.keysBufferingTime);
-        trace(`flush buffer\n${this._bufferedKeys}`);
+        debug(`flush buffer\n${this._bufferedKeys}`);
         const multi = this._redis.multi();
         for (let k of this._bufferedKeys) multi.get(k);
         this._bufferedKeys = [];

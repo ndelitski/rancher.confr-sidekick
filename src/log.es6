@@ -3,7 +3,7 @@ import {padRight} from 'lodash';
 const LOG_LEVEL = {
   'error': 0,
   'info': 1,
-  'trace': 2
+  'debug': 2
 };
 
 const verbosity = LOG_LEVEL[process.env.LOG_LEVEL || 'info'];
@@ -13,8 +13,8 @@ export function info(...args) {
   log('info', ...args);
 }
 
-export function trace(...args) {
-  log('trace', ...args);
+export function debug(...args) {
+  log('debug', ...args);
 }
 
 export function error(err) {
@@ -30,7 +30,7 @@ function log(severity, ...args) {
 
   if (severity == 'error') {
     method = 'error';
-  } else if (severity == 'trace') {
+  } else if (severity == 'debug') {
     method = 'log';
   } else if (severity == 'info') {
     method = 'log';

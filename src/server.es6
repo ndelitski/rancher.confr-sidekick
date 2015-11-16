@@ -1,5 +1,5 @@
 import _, {isObject, pluck, find, filter} from 'lodash';
-import {info, trace, error} from './log';
+import {info, debug, error} from './log';
 import Promise, {all, delay, promisifyAll} from 'bluebird';
 import assert from 'assert';
 import RancherMetadataClient from './backends/rancher-metadata';
@@ -21,7 +21,7 @@ import path from 'path';
   const metadata = new RancherMetadataClient();
   const location = await metadata.getLocation();
   const {stack, service, environment, version} = location;
-  trace(json`started in:\n ${location}`);
+  debug(json`started in:\n ${location}`);
 
   let dockerOpts;
   if (config.docker.socket) {
@@ -37,13 +37,13 @@ import path from 'path';
     }
   }
 
-  trace(json`initializing docker client with options:\n ${dockerOpts}`);
+  debug(json`initializing docker client with options:\n ${dockerOpts}`);
   const docker = promisifyAll(new Docker(dockerOpts));
   const containers = await docker.listContainersAsync();
   const deploymentUnit = await metadata.getDeploymentUnitLabel();
-  trace(`deployment unit is ${deploymentUnit}`);
+  debug(`deployment unit is ${deploymentUnit}`);
   const instanceContainers = filter(containers, ({Labels}) => Labels['io.rancher.service.deployment.unit'] == deploymentUnit);
-  trace(json`instance containers found:\n${instanceContainers}`);
+  debug(json`instance containers found:\n${instanceContainers}`);
   const targetContainer = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${service}`);
   info(json`found target container:\n${targetContainer}`);
   if (!targetContainer) {
