@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {info, trace, error} from './log';
-import {pairs} from 'lodash';
+import {pairs, keys} from 'lodash';
 import crypto from 'crypto';
 import {promisify} from 'bluebird';
 
@@ -52,7 +52,8 @@ export default class TemplateProcessor {
   }
 
   async load(content) {
-    content = 'import {aw, key} from "./template-functions"\n' + content;
+    const functions = keys(require('./template-functions'));
+    content = `import {${functions.join(',')}} from "./template-functions"\n` + content;
     const fileName = `template-generated.${await this.computeFileHash(content)}.es6`;
     fs.writeFileSync(path.join(__dirname, fileName), content, 'utf8');
     this._tmplFn = require('./' + fileName);

@@ -5,7 +5,7 @@ export default async function () {
 `;
   return {
     '/tmp/synccloud.frontend/config.json': {
-      content: await key('files/config.json'),
+      content: await file('config.json'),
       reload: true
     },
     '/tmp/nginx/conf.d/nginx.conf': {

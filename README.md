@@ -19,7 +19,7 @@ export default async function () {
 `;
   return {
     '/etc/my-frontend/config.json': {
-      content: await key('files/config.json'),
+      content: await file('config.json'),
       reload: true
     },
     '/etc/nginx/conf.d/nginx.conf': {
@@ -69,6 +69,7 @@ server {
      - /conf/:stack/:service/your_path
      - /conf/:stack/your_path
      - /conf/your_path
+ - `file` get file contents async. works same way as `key`    
  - `aw` is a tag function. resolve all promises in template expressions
 
 

@@ -8,6 +8,10 @@ export async function key(path) {
   }
 }
 
+export async function file(fileName) {
+  return await redis.tryGet(`files/${fileName}`);
+}
+
 export async function aw(strings, ...values) {
   let sum = '';
   let results = await all(values);
