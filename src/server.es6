@@ -1,13 +1,14 @@
-import _, {isObject, pluck, find, filter} from 'lodash';
+import _, {isObject, pluck, find, filter, indexBy, defaults, clone} from 'lodash';
 import {info, debug, error} from './log';
 import Promise, {all, delay, promisifyAll} from 'bluebird';
 import assert from 'assert';
 import RancherMetadataClient from './backends/rancher-metadata';
 import RedisClient from './backends/redis';
 import Docker from 'dockerode';
-import Processor from './processor';
+import ES6TemplateEngine from './engine';
 import fs from 'fs';
 import path from 'path';
+import {json} from './helpers';
 
 (async () => {
   const config = await require('./config');
@@ -15,8 +16,10 @@ import path from 'path';
   assert(typeof config.interval == 'number', '`interval` should be a number');
   assert(config.docker, '`docker` is missing');
   assert(config.docker.socket || config.docker.tcp, '`docker.tcp` or `docker.socket` is missing');
-  assert(config.docker.tcp && config.docker.tcp.host, '`docket.tcp.host` is missing');
-  assert(config.docker.tcp && config.docker.tcp.certPath, '`docket.tcp.certPath` is missing');
+  if (config.docker.tcp) {
+    assert(config.docker.tcp && config.docker.tcp.host, '`docket.tcp.host` is missing');
+    assert(config.docker.tcp && config.docker.tcp.certPath, '`docket.tcp.certPath` is missing');
+  }
 
   const metadata = new RancherMetadataClient();
   const location = await metadata.getLocation();
@@ -44,25 +47,25 @@ import path from 'path';
   debug(`deployment unit is ${deploymentUnit}`);
   const instanceContainers = filter(containers, ({Labels}) => Labels['io.rancher.service.deployment.unit'] == deploymentUnit);
   debug(json`instance containers found:\n${instanceContainers}`);
-  const targetContainer = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${service}`);
-  info(json`found target container:\n${targetContainer}`);
-  if (!targetContainer) {
-    throw new Error(`target container not found`);
+  const mainContainer = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${service}`);
+  info(json`found main container:\n${mainContainer}`);
+  if (!mainContainer) {
+    throw new Error(`main container not found`);
   }
 
   const redis = new RedisClient({redis: config.redis, location});
-  exposeGlobal(); // dirty hack for awhile
+  exposeGlobal(); // dirty hack for template evaluation (have to find another way later)
 
-  await checkDockerSocket();
-  let confn = new Processor();
+  const engine = new ES6TemplateEngine();
 
   process.on('SIGINT', cleanup);
 
   while (true) {
-    await confn.load(await redis.tryGet('files/conf.es6'));
-    const changed = await confn.eval();
-    if (changed) {
-      await reloadContainer();
+    debug('poll template');
+    await engine.load(await redis.tryGet('files/conf.es6'));
+    const reloadCommands = await engine.eval();
+    if (reloadCommands) {
+      await reloadContainers(reloadCommands);
     }
     await delay(config.interval);
   }
@@ -72,16 +75,50 @@ import path from 'path';
     global.metadata = metadata;
   }
 
-  async function checkDockerSocket() {
-    info('checking for docker socket');
-  }
+  async function reloadContainers(reloadCommands) {
+    const RELOAD_DEFAULTS = {
+      target: 'main',
+      signal: 'SIGINT',
+      timeout: 5
+    };
 
-  async function reloadContainer() {
-    info('requested to reload container');
+    const byTarget = indexBy(reloadCommands.map((r)=>{
+      if (r === true) {
+        return clone(RELOAD_DEFAULTS)
+      } else {
+        if (!isObject(r)) {
+          throw new Error(`failed to process reload command ${r}, expected Object type or Boolean`);
+        } else {
+          if (r.target == service) {
+            r.target = 'main'
+          }
+          return defaults(r, RELOAD_DEFAULTS)
+        }
+      }
+    }), 'target');
+
+    info('restarting containers...');
+
+    for (let [targetName, command] of pairs(byTarget)) {
+      let container;
+      if (targetName == 'main') {
+        container = docker.getContainer(mainContainer.Id)
+      } else {
+        const containerFromInstanceContainers = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${targetName}`);
+        if (!containerFromInstanceContainers) {
+          throw new Error(json`ordered to restart ${target} but failed to find it across instance containers\ ${instanceContainers}`)
+        }
+        container = docker.getContainer(containerFromInstanceContainers.Id)
+      }
+
+      await promisifyAll(container).restartAsync({t: command.timeout});
+      info(`container ${container.Id} restarted`);
+    }
+
   }
 
   function cleanup() {
-    confn.cleanup();
+    engine.cleanup();
   }
 
 })();
@@ -91,17 +128,4 @@ process.on('unhandledRejection', handleError);
 function handleError(err) {
   error(err);
   process.exit(1);
-}
-
-function json(strings, ...values) {
-  let result = '';
-  strings.forEach((fragment, i) => {
-    let value = values[i];
-    result += fragment + (isObject(value) ? stringify(value) : value || '')
-  });
-  return result;
-}
-
-function stringify(obj) {
-  return JSON.stringify(obj, null, 4);
 }

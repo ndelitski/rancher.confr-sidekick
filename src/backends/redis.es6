@@ -6,7 +6,9 @@ import {info, debug, error} from '../log';
 
 promisifyAll(redisLib.RedisClient.prototype);
 promisifyAll(redisLib.Multi.prototype);
+
 const KEY_PREFIX = '/conf/';
+
 export default class RedisClient {
   static keysBufferingTime = 200;
 
@@ -61,7 +63,7 @@ export default class RedisClient {
       }
       return res;
     }
-    // invoke immeaditealy
+    // invoke instantly
     else {
       const multi = this._redis.multi();
       for (let p of searchedKeys) multi.get(p);

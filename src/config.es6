@@ -5,14 +5,10 @@ import {info} from './log';
 import axios from 'axios';
 
 const readFile = promisify(fs.readFile);
-const {CONFIG_FILE} = process.env;
 const DEFAULT_CONFIG_FILE = path.join(__dirname, '../config.json');
 
 export default (async function resolveConfig() {
-  if (CONFIG_FILE) {
-    info(`reading config from file ${CONFIG_FILE}`);
-    return await fileSource(CONFIG_FILE);
-  } else if (fs.existsSync(DEFAULT_CONFIG_FILE)) {
+  if (fs.existsSync(DEFAULT_CONFIG_FILE)) {
     info(`reading config from file ${DEFAULT_CONFIG_FILE}`);
     return await fileSource(DEFAULT_CONFIG_FILE);
   } else {
@@ -29,28 +25,20 @@ async function fileSource(filePath) {
 
 async function envSource() {
   const {
-    RANCHER_ADDRESS,
-    RANCHER_ACCESS_KEY,
-    RANCHER_SECRET_KEY,
-    RANCHER_PROJECT_ID,
-    CATTLE_ACCESS_KEY,
-    CATTLE_SECRET_KEY,
-    DNS_POLL_INTERVAL,
-    DNS_DOMAIN,
-    DNS_PORT,
+    REDIS_HOST,
+    REDIS_PORT,
+    CONFR_INTERVAL,
+    CONFR_DOCKER_SOCKET
   } = process.env;
 
   return {
-    rancher: {
-      address: RANCHER_ADDRESS,
-      auth: {
-        accessKey: RANCHER_ACCESS_KEY || CATTLE_ACCESS_KEY,
-        secretKey: RANCHER_SECRET_KEY || CATTLE_SECRET_KEY
-      },
-      projectId: RANCHER_PROJECT_ID
+    redis: {
+      host: REDIS_HOST,
+      port: REDIS_PORT || 6379
     },
-    domain: DNS_DOMAIN,
-    port: DNS_PORT || 53,
-    pollServicesInterval: DNS_POLL_INTERVAL || 10000
+    interval: CONFR_INTERVAL || 5000,
+    docker: {
+      socket: CONFR_DOCKER_SOCKET || '/var/run/docker.sock'
+    }
   }
 }

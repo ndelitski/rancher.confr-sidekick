@@ -4,7 +4,7 @@ set -e
 
 repo=ndelitski
 
-image=confn
+image=confr-sidekick
 
 version_default=latest
 

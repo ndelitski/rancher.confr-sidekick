@@ -7,7 +7,7 @@ import {promisify} from 'bluebird';
 
 const mkdirp = promisify(require('mkdirp'));
 
-export default class TemplateProcessor {
+export default class ES6TemplateEngine {
   constructor({content} = {}) {
     if (content) {
       this._loading = this.load(content);
@@ -23,22 +23,24 @@ export default class TemplateProcessor {
       throw new Error('no template loaded to be evaled in the processor');
     }
 
-    info(`processing templates`);
     this._previousResult = this._result;
     this._result = await this._tmplFn();
     let changed = false;
     let needReload = false;
+    let reloadCommands = [];
     for (let [filePath, {content, reload}] of pairs(this._result)) {
       if (!this._previousResult || this._previousResult[filePath].content != content) {
         info(`file ${filePath} changed: ${content}`);
         this._writeResultFile(filePath, content);
         needReload = needReload || reload;
         changed = true;
+        if (reload) {
+          reloadCommands.push(reload);
+        }
       }
     }
     if (this._previousResult && changed && needReload) {
-      this.emit('changed');
-      return true;
+      return reloadCommands;
     }
   }
 
