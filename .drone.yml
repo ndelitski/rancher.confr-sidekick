@@ -5,11 +5,11 @@ publish:
   docker:
     when:
       branch: master
-      event: tag
+    environment:
+      - DOCKER_LAUNCH_DEBUG=true
     username: ndelitski
     password: $$DOCKER_PASSWORD
     email: ndelitski@gmail.com
     repo: ndelitski/confr-sidekick
     tag:
       - latest
-      - $$TAG
