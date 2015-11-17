@@ -4,7 +4,6 @@ cache:
 publish:
   docker:
     when:
-      branch: master
       event: tag
     environment:
       - DOCKER_LAUNCH_DEBUG=true
