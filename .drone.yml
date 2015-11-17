@@ -1,6 +1,3 @@
-cache:
-  mount:
-    - .git
 publish:
   docker:
     when:
@@ -12,3 +9,10 @@ publish:
     tag:
       - latest
       - $$TAG
+    archive:
+      file: docker/confr-sidekick.tar
+      tag: latest
+cache:
+  mount:
+    - .git
+    - docker/confr-sidekick.tar
