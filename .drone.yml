@@ -13,3 +13,4 @@ publish:
     repo: ndelitski/confr-sidekick
     tag:
       - latest
+      - $$TAG
