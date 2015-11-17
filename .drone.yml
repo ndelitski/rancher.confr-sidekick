@@ -5,8 +5,6 @@ publish:
   docker:
     when:
       event: tag
-    environment:
-      - DOCKER_LAUNCH_DEBUG=true
     username: ndelitski
     password: $$DOCKER_PASSWORD
     email: ndelitski@gmail.com
