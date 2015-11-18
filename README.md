@@ -40,7 +40,7 @@ redis-counter: #change config template in realtime
   links:
     - 'redis:redis'
   command: bash -c 'c=0; while true; do let c=c+1; echo $${c}; redis-cli -h redis set /conf/count "$${c}"; sleep 10; done'
-hello-conf: # configuration sidekick
+hello-conf: # configuration sidekick for hello app
   image: ndelitski/confr-sidekick:v0.1.0
   volumes:
     - '/var/run/docker.sock:/var/run/docker.sock:ro'
@@ -62,6 +62,16 @@ hello: # your application using config at /tmp/hello
     - 'redis:redis'
   labels:
     io.rancher.sidekicks: hello-conf
+hello-no-restart: # will not restart when config changed
+  image: debian
+  command: bash -c 'while true; do cat /tmp/hello; sleep 2; done'
+  volumes_from:
+    - hello-conf
+  links:
+    - 'redis:redis'
+  labels:
+    io.rancher.confr.restart: 'false'
+    io.rancher.sidekicks: hello-conf    
 ```
 ## Template
 ```js
