@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {info, debug, error} from './log';
-import {pairs, keys} from 'lodash';
+import {isString, pairs, keys, isObject} from 'lodash';
 import crypto from 'crypto';
-import {promisify} from 'bluebird';
+import {promisify, props} from 'bluebird';
 
 const mkdirp = promisify(require('mkdirp'));
 
@@ -19,28 +19,25 @@ export default class ES6TemplateEngine {
       await this._loading;
     }
 
-    if (!this._tmplFn) {
+    if (!this._tmpl) {
       throw new Error('no template loaded to be evaled in the processor');
     }
-
+    debug(`start evaluating template`);
     this._previousResult = this._result;
-    this._result = await this._tmplFn();
+    this._result = await this._tmpl();
     let changed = false;
-    let needReload = false;
-    let reloadCommands = [];
-    for (let [filePath, {content, reload}] of pairs(this._result)) {
-      if (!this._previousResult || this._previousResult[filePath].content != content) {
+    for (let [filePath, content] of pairs(this._result)) {
+      if (!isString(content)) {
+        throw new Error(`${filePath} content resolved to non-string value: ${content}`);
+      }
+      if (!this._previousResult || this._previousResult[filePath] != content) {
         info(`file ${filePath} changed: ${content}`);
         this._writeResultFile(filePath, content);
-        needReload = needReload || reload;
         changed = true;
-        if (reload) {
-          reloadCommands.push(reload);
-        }
       }
     }
-    if (this._previousResult && changed && needReload) {
-      return reloadCommands;
+    if (this._previousResult && changed) {
+      return changed;
     }
   }
 
@@ -55,10 +52,23 @@ export default class ES6TemplateEngine {
 
   async load(content) {
     const functions = keys(require('./template-functions'));
-    content = `import {${functions.join(',')}} from "./template-functions"\n` + content;
-    const fileName = `template-generated.${await this.computeFileHash(content)}.es6`;
-    fs.writeFileSync(path.join(__dirname, fileName), content, 'utf8');
-    this._tmplFn = require('./' + fileName);
+
+    content = `import {${functions.join(',')}} from "./template-functions"
+import {props} from 'bluebird';
+${content.replace(new RegExp('export\\s*default\\s*\\{'), 'export default async function template() { return await props({')} )}
+`;
+    const hashsum = await this.computeFileHash(content);
+    if (this._prevTemplateHashsum !== hashsum) {
+      if (this._prevTemplateHashsum) {
+        info(`template hashsum changed from ${this._prevTemplateHashsum} to ${hashsum}`)
+      }
+      this._prevTemplateHashsum = hashsum;
+      const fileName = `template-generated.${hashsum}.es6`;
+      const filePath = path.join(__dirname, fileName);
+      fs.writeFileSync(filePath, content, 'utf8');
+      info(`loaded ${fileName}:\n${content}`);
+      this._tmpl = require('./' + fileName);
+    }
   }
 
   async computeFileHash(text) {

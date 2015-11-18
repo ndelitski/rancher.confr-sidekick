@@ -18,7 +18,7 @@ export default class RedisClient {
     this._version = version;
     this._environment = environment;
     this._service = service;
-    this._redis = redisLib.createClient(redis);
+    this._client = redisLib.createClient(redis);
     this._bufferedKeys = [];
   }
 
@@ -29,7 +29,7 @@ export default class RedisClient {
       this._buffering = (async () => {
         await delay(RedisClient.keysBufferingTime);
         debug(`flush buffer\n${this._bufferedKeys}`);
-        const multi = this._redis.multi();
+        const multi = this._client.multi();
         for (let k of this._bufferedKeys) multi.get(k);
         this._bufferedKeys = [];
         return await multi.execAsync();
@@ -65,7 +65,7 @@ export default class RedisClient {
     }
     // invoke instantly
     else {
-      const multi = this._redis.multi();
+      const multi = this._client.multi();
       for (let p of searchedKeys) multi.get(p);
       const res = first(await multi.execAsync(), (v) => !!v);
       if (!res) {
@@ -81,7 +81,7 @@ export default class RedisClient {
    * @returns {*}
    */
   async get(key) {
-    return await this._redis.getAsync(KEY_PREFIX + compact([this._stack, this._service, this._environment, this._version, key]).join('/'))
+    return await this._client.getAsync(KEY_PREFIX + compact([this._stack, this._service, this._environment, this._version, key]).join('/'))
   }
 
   suggestKeys(path) {

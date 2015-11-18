@@ -10,6 +10,8 @@ import fs from 'fs';
 import path from 'path';
 import {json} from './helpers';
 
+const RESTART_BATCH_SIZE = 2;
+
 (async () => {
   const config = await require('./config');
   info(json`started with config:\n${config}`);
@@ -23,6 +25,8 @@ import {json} from './helpers';
 
   const metadata = new RancherMetadataClient();
   const location = await metadata.getLocation();
+  const self = await metadata.getSelf();
+  debug(json`self: ${self}`);
   const {stack, service, environment, version} = location;
   debug(json`started in:\n ${location}`);
 
@@ -45,13 +49,6 @@ import {json} from './helpers';
   const containers = await docker.listContainersAsync();
   const deploymentUnit = await metadata.getDeploymentUnitLabel();
   debug(`deployment unit is ${deploymentUnit}`);
-  const instanceContainers = filter(containers, ({Labels}) => Labels['io.rancher.service.deployment.unit'] == deploymentUnit);
-  debug(json`instance containers found:\n${instanceContainers}`);
-  const mainContainer = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${service}`);
-  info(json`found main container:\n${mainContainer}`);
-  if (!mainContainer) {
-    throw new Error(`main container not found`);
-  }
 
   const redis = new RedisClient({redis: config.redis, location});
   exposeGlobal(); // dirty hack for template evaluation (have to find another way later)
@@ -59,13 +56,12 @@ import {json} from './helpers';
   const engine = new ES6TemplateEngine();
 
   process.on('SIGINT', cleanup);
-
   while (true) {
     debug('poll template');
     await engine.load(await redis.tryGet('files/conf.es6'));
-    const reloadCommands = await engine.eval();
-    if (reloadCommands) {
-      await reloadContainers(reloadCommands);
+    const changed = await engine.eval();
+    if (changed) {
+      await restartMainContainer();
     }
     await delay(config.interval);
   }
@@ -75,52 +71,30 @@ import {json} from './helpers';
     global.metadata = metadata;
   }
 
-  async function reloadContainers(reloadCommands) {
-    const RELOAD_DEFAULTS = {
-      target: 'main',
-      signal: 'SIGINT',
-      timeout: 5
-    };
-
-    const byTarget = indexBy(reloadCommands.map((r)=>{
-      if (r === true) {
-        return clone(RELOAD_DEFAULTS)
-      } else {
-        if (!isObject(r)) {
-          throw new Error(`failed to process reload command ${r}, expected Object type or Boolean`);
-        } else {
-          if (r.target == service) {
-            r.target = 'main'
-          }
-          return defaults(r, RELOAD_DEFAULTS)
-        }
-      }
-    }), 'target');
-
-    info('restarting containers...');
-
-    for (let [targetName, command] of pairs(byTarget)) {
-      let container;
-      if (targetName == 'main') {
-        container = docker.getContainer(mainContainer.Id)
-      } else {
-        const containerFromInstanceContainers = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${targetName}`);
-        if (!containerFromInstanceContainers) {
-          throw new Error(json`ordered to restart ${target} but failed to find it across instance containers\ ${instanceContainers}`)
-        }
-        container = docker.getContainer(containerFromInstanceContainers.Id)
-      }
-
-      await promisifyAll(container).restartAsync({t: command.timeout});
-      info(`container ${container.Id} restarted`);
-    }
-
+  let mainContainer;
+  async function restartMainContainer(reloadCommands) {
+    info('restarting main container...');
+    const container = promisifyAll(docker.getContainer((mainContainer = mainContainer || await getMainContainer()).Id));
+    const createdIndex = self.create_index;
+    const timeout = (Math.floor(createdIndex / RESTART_BATCH_SIZE) + 1) * 5000;
+    await container.restartAsync({t: timeout});
   }
 
   function cleanup() {
     engine.cleanup();
   }
 
+  async function getMainContainer() {
+    const instanceContainers = filter(containers, ({Labels}) => Labels['io.rancher.service.deployment.unit'] == deploymentUnit);
+    debug(json`instance containers found:\n${instanceContainers}`);
+    const mainContainer = find(instanceContainers, ({Labels}) => Labels['io.rancher.stack_service.name'] == `${stack}/${service}`);
+    info(json`found main container:\n${mainContainer}`);
+    if (!mainContainer) {
+      throw new Error(`main container not found`);
+    }
+
+    return mainContainer;
+  }
 })();
 
 process.on('unhandledRejection', handleError);
