@@ -73,8 +73,13 @@ const RESTART_BATCH_SIZE = 2;
 
   let mainContainer;
   async function restartMainContainer(reloadCommands) {
+    mainContainer = mainContainer || await getMainContainer()
+    if (mainContainer.Labels['io.rancher.confr.restart'] == 'false') {
+      debug('no need to restart main contaner due to `io.rancher.confr.restart`: false');
+    }
     info('restarting main container...');
-    const container = promisifyAll(docker.getContainer((mainContainer = mainContainer || await getMainContainer()).Id));
+
+    const container = promisifyAll(docker.getContainer(mainContainer.Id));
     const createdIndex = self.create_index;
     const timeout = (Math.floor(createdIndex / RESTART_BATCH_SIZE) + 1) * 5000;
     await container.restartAsync({t: timeout});
