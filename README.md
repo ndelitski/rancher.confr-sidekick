@@ -20,7 +20,48 @@ discovery.zen.ping.unicast.hosts: ["es-masters"]
  - Environment-aware. Keys are fetched in `environment<-stack<-service<-version` order. You can specify some common settings on stack level and override some of them on service or version level 
 
 ## Examples & Usage
-coming soon...
+```
+redis:
+  image: redis
+  tty: true
+  stdin_open: true
+  labels:
+    io.rancher.container.requested_ip: 10.42.111.111 #have to specify strict ip due to bootstraper cant resolve dns at startup
+redis-bootstrapper: #bootstrap redis with config template
+  image: redis
+  command: redis-cli -h 10.42.111.111 set /conf/files/conf.es6 "export default {'/tmp/hello': key('count')}"
+  links:
+    - redis:redis
+  labels:
+    io.rancher.container.start_once: 'true'
+redis-counter: #change config template in realtime
+  image: redis
+  links:
+    - 'redis:redis'
+  command: bash -c 'c=0; while true; do let c=c+1; echo $${c}; redis-cli -h redis set /conf/count "$${c}"; sleep 10; done'
+hello-conf: # configuration sidekick
+  image: ndelitski/confr-sidekick:v0.1.0
+  volumes:
+    - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    - /tmp
+  links:
+    - 'redis:redis'
+  environment:
+    CONFR_REDIS_HOST: redis
+    CONFR_REDIS_PORT: 6379
+    LOG_LEVEL: debug
+  tty: true
+  stdin_open: true    
+hello: # your application using config at /tmp/hello
+  image: debian
+  command: while true; do cat /tmp/hello; sleep 2; done
+  volumes_from:
+    - hello-conf
+  links:
+    - 'redis:redis'
+  labels:
+    io.rancher.sidekicks: hello-conf
+```
 ## Template
 ```js
 const proxy_set_header = `proxy_set_header        Host            \$host;
