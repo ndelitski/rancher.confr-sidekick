@@ -35,7 +35,7 @@ describe('template functions', function() {
 
     await redis._client.setAsync('/conf/frontend/frontend/staging/files/some-text-file', 'foo');
 
-    expect(await engine.eval()).to.eql(true);
+    await engine.eval();
     const result = engine._result['/tmp/plain.conf'];
     expect(result).to.eql('foo');
     await redis._client.setAsync('/conf/frontend/frontend/staging/files/some-text-file', 'bar');

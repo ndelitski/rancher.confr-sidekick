@@ -1,6 +1,6 @@
 import assert from 'assert';
 import redisLib from 'redis';
-import {first, compact, isArray} from 'lodash';
+import {find, compact, isArray} from 'lodash';
 import {promisifyAll, delay, all} from 'bluebird';
 import {info, debug, error} from '../log';
 
@@ -57,7 +57,7 @@ export default class RedisClient {
       for (let p of searchedKeys) {
         this._buffer(p);
       }
-      const res = first((await this._buffering).slice(startIndex, startIndex + searchedKeys.length + 1), (v) => !!v);
+      const res = find((await this._buffering).slice(startIndex, startIndex + searchedKeys.length + 1), (v) => !!v);
       if (!res) {
         throw new Error(`key ${path} was not found in paths:\n${searchedKeys.join('\n')}`);
       }
@@ -67,7 +67,8 @@ export default class RedisClient {
     else {
       const multi = this._client.multi();
       for (let p of searchedKeys) multi.get(p);
-      const res = first(await multi.execAsync(), (v) => !!v);
+      const res = find(await multi.execAsync(), (v) => !!v);
+
       if (!res) {
         throw new Error(`key ${path} was not found in paths:\n${searchedKeys.join('\n')}`);
       }
