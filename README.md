@@ -20,7 +20,8 @@ discovery.zen.ping.unicast.hosts: ["es-masters"]
  - Environment-aware. Keys are fetched in `environment<-stack<-service<-version` order. You can specify some common settings on stack level and override some of them on service or version level 
 
 ## Examples & Usage
-```
+docker-compose.yml
+```yml
 redis:
   image: redis
   tty: true
