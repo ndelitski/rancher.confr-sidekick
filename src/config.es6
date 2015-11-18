@@ -34,7 +34,7 @@ async function envSource() {
   return {
     redis: {
       host: CONFR_REDIS_HOST,
-      port: CONFR_REDIS_HOST || 6379
+      port: CONFR_REDIS_PORT || 6379
     },
     interval: CONFR_INTERVAL || 5000,
     docker: {
