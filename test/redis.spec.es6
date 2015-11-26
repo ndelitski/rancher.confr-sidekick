@@ -28,10 +28,38 @@ describe('redis', function() {
     console.log('results: ', results);
   });
 
-  it('should hierarchicaly get key value', async function() {
-    const redis = new RedisClient({redis: {host: '192.168.99.100'}, location: {stack: 'some-service', service: 'some-stack', environment: 'some-env'}});
+  describe('hierarchic get', async function() {
+    const test = function(location, path) {
+      return async function () {
+        const redis = new RedisClient({redis: {host: '192.168.99.100'}, location});
+        const key = `/conf/${path ? path + '/' : ''}files/rootfile2`;
+        await redis._client.setAsync(key, 'foo');
+        expect(await redis.tryGet('files/rootfile2')).to.eql('foo');
+        await redis._client.delAsync(key);
+      }
+    };
 
-    await redis._client.setAsync('/conf/files/rootfile', 'foo');
-    expect(await redis.tryGet('files/rootfile')).to.eql('foo');
+    it('should get root value', test({
+      stack: 'stack',
+      service: 'service',
+      environment: 'env'
+    }));
+
+    it('should get stack value', test({
+      stack: 'stack',
+      service: 'service',
+      environment: 'env'
+    }, 'stack'));
+
+    it('should get stack+env value when service not specified', test({
+      stack: 'stack',
+      environment: 'env'
+    }, 'stack/env'));
+
+    it('should get stack+env value when service specified', test({
+      stack: 'stack',
+      service: 'service',
+      environment: 'env'
+    }, 'stack/env'));
   });
 });

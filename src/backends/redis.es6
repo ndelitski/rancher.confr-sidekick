@@ -1,6 +1,6 @@
 import assert from 'assert';
 import redisLib from 'redis';
-import {find, compact, isArray} from 'lodash';
+import {find, compact, isArray, uniq} from 'lodash';
 import {promisifyAll, delay, all} from 'bluebird';
 import {info, debug, error} from '../log';
 
@@ -87,18 +87,27 @@ export default class RedisClient {
 
   suggestKeys(path) {
     const paths = [];
-    const fullPath = [this._stack, this._service, this._environment, this._version];
-    for (var i = fullPath.length - 1; i >= 0; i--) {
-      var item = fullPath[i];
-      if (item) {
-        paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).concat(path).join('/'));
+
+    let fullPath;
+    if (this._service) {
+      fullPath = [this._stack, this._service, this._environment, this._version];
+      for (let i = fullPath.length - 1; i >= 0; i--) {
+        const item = fullPath[i];
+        if (item) {
+          paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).filter((segment) => segment).concat(path).join('/'));
+        }
       }
     }
+
+    fullPath = [this._stack, this._environment, this._version];
+    for (let i = fullPath.length - 1; i >= 0; i--) {
+      const item = fullPath[i];
+      if (item) {
+        paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).filter((segment) => segment).concat(path).join('/'));
+      }
+    }
+
     paths.push(KEY_PREFIX + path);
-    return paths;
-  }
-
-  async watch() {
-
+    return uniq(paths);
   }
 }
