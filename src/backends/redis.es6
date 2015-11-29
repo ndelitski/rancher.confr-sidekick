@@ -1,6 +1,6 @@
 import assert from 'assert';
 import redisLib from 'redis';
-import {first, compact, isArray} from 'lodash';
+import {find, compact, isArray, uniq} from 'lodash';
 import {promisifyAll, delay, all} from 'bluebird';
 import {info, debug, error} from '../log';
 
@@ -18,7 +18,7 @@ export default class RedisClient {
     this._version = version;
     this._environment = environment;
     this._service = service;
-    this._redis = redisLib.createClient(redis);
+    this._client = redisLib.createClient(redis);
     this._bufferedKeys = [];
   }
 
@@ -29,7 +29,7 @@ export default class RedisClient {
       this._buffering = (async () => {
         await delay(RedisClient.keysBufferingTime);
         debug(`flush buffer\n${this._bufferedKeys}`);
-        const multi = this._redis.multi();
+        const multi = this._client.multi();
         for (let k of this._bufferedKeys) multi.get(k);
         this._bufferedKeys = [];
         return await multi.execAsync();
@@ -57,7 +57,7 @@ export default class RedisClient {
       for (let p of searchedKeys) {
         this._buffer(p);
       }
-      const res = first((await this._buffering).slice(startIndex, startIndex + searchedKeys.length + 1), (v) => !!v);
+      const res = find((await this._buffering).slice(startIndex, startIndex + searchedKeys.length + 1), (v) => !!v);
       if (!res) {
         throw new Error(`key ${path} was not found in paths:\n${searchedKeys.join('\n')}`);
       }
@@ -65,9 +65,10 @@ export default class RedisClient {
     }
     // invoke instantly
     else {
-      const multi = this._redis.multi();
+      const multi = this._client.multi();
       for (let p of searchedKeys) multi.get(p);
-      const res = first(await multi.execAsync(), (v) => !!v);
+      const res = find(await multi.execAsync(), (v) => !!v);
+
       if (!res) {
         throw new Error(`key ${path} was not found in paths:\n${searchedKeys.join('\n')}`);
       }
@@ -81,23 +82,32 @@ export default class RedisClient {
    * @returns {*}
    */
   async get(key) {
-    return await this._redis.getAsync(KEY_PREFIX + compact([this._stack, this._service, this._environment, this._version, key]).join('/'))
+    return await this._client.getAsync(KEY_PREFIX + compact([this._stack, this._service, this._environment, this._version, key]).join('/'))
   }
 
   suggestKeys(path) {
     const paths = [];
-    const fullPath = [this._stack, this._service, this._environment, this._version];
-    for (var i = fullPath.length - 1; i >= 0; i--) {
-      var item = fullPath[i];
-      if (item) {
-        paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).concat(path).join('/'));
+
+    let fullPath;
+    if (this._service) {
+      fullPath = [this._stack, this._service, this._environment, this._version];
+      for (let i = fullPath.length - 1; i >= 0; i--) {
+        const item = fullPath[i];
+        if (item) {
+          paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).filter((segment) => segment).concat(path).join('/'));
+        }
       }
     }
+
+    fullPath = [this._stack, this._environment, this._version];
+    for (let i = fullPath.length - 1; i >= 0; i--) {
+      const item = fullPath[i];
+      if (item) {
+        paths.push(KEY_PREFIX + fullPath.slice(0, i + 1).filter((segment) => segment).concat(path).join('/'));
+      }
+    }
+
     paths.push(KEY_PREFIX + path);
-    return paths;
-  }
-
-  async watch() {
-
+    return uniq(paths);
   }
 }

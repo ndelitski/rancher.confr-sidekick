@@ -5,7 +5,7 @@ import $url from 'url';
 import {info, debug, error} from '../log';
 import {json} from '../helpers';
 export default class RancherMetadataClient {
-  constructor({address = 'http://rancher-metadata', prefix = 'latest'} = {}) {
+  constructor({address = 'http://rancher-metadata', prefix = '2015-07-25'} = {}) {
     this.address = address;
     this.prefix = prefix;
   }
@@ -40,6 +40,9 @@ export default class RancherMetadataClient {
       },
       responseType: 'json'
     });
+  }
+  async getSelf() {
+    return await this.getJson('self');
   }
   async getService() {
     return (await this.get('self/container/labels/io.rancher.stack_service.name')).split('/')[1];

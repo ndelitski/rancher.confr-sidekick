@@ -12,7 +12,7 @@ export async function file(fileName) {
   return await redis.tryGet(`files/${fileName}`);
 }
 
-export async function aw(strings, ...values) {
+export async function async_(strings, ...values) {
   let sum = '';
   let results = await all(values);
   strings.forEach((frag, i) => {

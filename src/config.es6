@@ -25,16 +25,16 @@ async function fileSource(filePath) {
 
 async function envSource() {
   const {
-    REDIS_HOST,
-    REDIS_PORT,
+    CONFR_REDIS_HOST,
+    CONFR_REDIS_PORT,
     CONFR_INTERVAL,
     CONFR_DOCKER_SOCKET
   } = process.env;
 
   return {
     redis: {
-      host: REDIS_HOST,
-      port: REDIS_PORT || 6379
+      host: CONFR_REDIS_HOST,
+      port: CONFR_REDIS_PORT || 6379
     },
     interval: CONFR_INTERVAL || 5000,
     docker: {

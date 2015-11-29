@@ -1,15 +1,11 @@
-export default async function () {
-  const proxy_set_header = `proxy_set_header        Host            \$host;
+const proxy_set_header = `proxy_set_header        Host            \$host;
         proxy_set_header        X-Real-IP       \$remote_addr;
         proxy_set_header        X-Forwarded-For \$proxy_add_x_forwarded_for;
 `;
-  return {
-    '/tmp/synccloud.frontend/config.json': {
-      content: await file('config.json'),
-      reload: true
-    },
-    '/tmp/nginx/conf.d/nginx.conf': {
-      content: await aw`
+
+export default {
+    '/tmp/synccloud.frontend/config.json': file('config.json'),
+    '/tmp/nginx/conf.d/nginx.conf': async_`
 upstream app {
   server localhost:${key('port')};
 }
@@ -39,6 +35,4 @@ server {
 
     }
 }`
-    }
-  }
 }
