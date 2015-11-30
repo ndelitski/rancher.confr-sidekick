@@ -1,0 +1,34 @@
+redis:
+  image: redis
+  tty: true
+  stdin_open: true
+  labels:
+    io.rancher.container.requested_ip: 10.42.111.111 #have to specify strict ip due to bootstraper cant resolve dns at startup
+redis-bootstrapper: #bootstrap redis with config template
+  image: redis
+  command: redis-cli -h 10.42.111.111 set /conf/files/conf.es6 "export default {'/tmp/hello': 'a123'}"
+  links:
+    - redis:redis
+  labels:
+    io.rancher.container.start_once: 'true'
+hello-conf: # configuration sidekick for hello app
+  image: ndelitski/confr-sidekick:0.1.2
+  volumes:
+    - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    - /tmp
+  links:
+    - 'redis:redis'
+  environment:
+    CONFR_REDIS_HOST: redis
+    LOG_LEVEL: debug
+  tty: true
+  stdin_open: true
+hello: # your application using config at /tmp/hello
+  image: debian
+  command: while true; do cat /tmp/hello; sleep 2; done
+  volumes_from:
+    - hello-conf
+  links:
+    - 'redis:redis'
+  labels:
+    io.rancher.sidekicks: hello-conf
