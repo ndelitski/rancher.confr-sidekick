@@ -1,2 +1,2 @@
-require('babel-core/register');
-require('../src/server');
+#!/usr/bin/env node
+require('../dist/server');
