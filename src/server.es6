@@ -24,6 +24,7 @@ const waitForPort = promisify(require('wait-for-port'));
     assert(config.docker.tcp && config.docker.tcp.certPath, '`docket.tcp.certPath` is missing');
   }
 
+  info('waiting for `rancher-metadata` become available');
   const retries = 10;
   const retryInterval = 1000;
   try {
