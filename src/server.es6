@@ -1,6 +1,6 @@
 import _, {isObject, pluck, find, filter, indexBy, defaults, clone} from 'lodash';
 import {info, debug, error} from './log';
-import Promise, {all, delay, promisifyAll} from 'bluebird';
+import Promise, {all, delay, promisify, promisifyAll} from 'bluebird';
 import assert from 'assert';
 import RancherMetadataClient from './backends/rancher-metadata';
 import RedisClient from './backends/redis';
@@ -11,6 +11,7 @@ import path from 'path';
 import {json} from './helpers';
 
 const RESTART_BATCH_SIZE = 2;
+const waitForPort = promisify(require('wait-for-port'));
 
 (async () => {
   const config = await require('./config');
@@ -21,6 +22,15 @@ const RESTART_BATCH_SIZE = 2;
   if (config.docker.tcp) {
     assert(config.docker.tcp && config.docker.tcp.host, '`docket.tcp.host` is missing');
     assert(config.docker.tcp && config.docker.tcp.certPath, '`docket.tcp.certPath` is missing');
+  }
+
+  const retries = 10;
+  const retryInterval = 1000;
+  try {
+    await waitForPort('rancher-metadata', 80, {numRetries: retries, retryInterval});
+  } catch (err) {
+    error(err);
+    throw new Error(`failed to reach host: rancher-metadata with ${retries} retries with interval ${retryInterval}`);
   }
 
   const metadata = new RancherMetadataClient();

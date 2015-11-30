@@ -18,7 +18,8 @@
     "dockerode": "^2.2.3",
     "lodash": "^3.10.1",
     "mkdirp": "^0.5.1",
-    "redis": "^2.3.0"
+    "redis": "^2.3.0",
+    "wait-for-port": "0.0.1"
   },
   "devDependencies": {
     "chai": "^3.4.1",
