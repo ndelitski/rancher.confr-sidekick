@@ -13,6 +13,8 @@ publish:
     password: $$DOCKER_PASSWORD
     email: ndelitski@gmail.com
     repo: ndelitski/confr-sidekick
+    environment:
+      NPM_CONFIG_LOGLEVEL: warn
     tag:
       - latest
       - $$TAG
