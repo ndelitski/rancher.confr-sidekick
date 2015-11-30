@@ -1,6 +1,6 @@
 {
   "name": "rancher.confr-sidekick",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Confd inspired configuration generator",
   "bin": {
     "confr": "bin/confr.js"
