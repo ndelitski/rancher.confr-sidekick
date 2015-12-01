@@ -12,7 +12,7 @@ redis-bootstrapper: #bootstrap redis with config template
   labels:
     io.rancher.container.start_once: 'true'
 hello-conf: # configuration sidekick for hello app
-  image: ndelitski/confr-sidekick:0.1.2
+  image: ndelitski/confr-sidekick:v0.1.4
   volumes:
     - '/var/run/docker.sock:/var/run/docker.sock:ro'
     - /tmp

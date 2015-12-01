@@ -7,7 +7,7 @@
   },
   "preferGlobal": true,
   "scripts": {
-    "start": "node bin/confr.js",
+    "start": "node bin/confr.dev.js",
     "dev": "node bin/confr.dev.js",
     "test": "./node_modules/.bin/mocha $(find test -name '*.es6' | sort)",
     "build": "./node_modules/.bin/babel src/ -d dist --optional runtime"
@@ -16,7 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.7.0",
-    "babel-runtime": "^5.8.34",
+    "babel-core": "^5.8.34",
     "bluebird": "^3.0.5",
     "dockerode": "^2.2.3",
     "lodash": "^3.10.1",
@@ -26,7 +26,9 @@
   },
   "devDependencies": {
     "chai": "^3.4.1",
-    "mocha": "^2.3.4",
-    "babel": "^5.8.33"
+    "mocha": "^2.3.4"
+  },
+  "babel": {
+    "stage": 0
   }
 }

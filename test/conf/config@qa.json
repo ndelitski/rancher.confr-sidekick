@@ -1,0 +1,7 @@
+{
+    "concurrency": "1",
+    "port": 8081,
+    "backend": "http://backend",
+    "staticUrl": "/static",
+    "realtime": "http://realtime"
+}
