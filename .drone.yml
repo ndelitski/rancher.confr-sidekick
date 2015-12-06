@@ -7,7 +7,7 @@ publish:
     email: ndelitski@gmail.com
     repo: ndelitski/confr-sidekick
     environment:
-      NPM_CONFIG_LOGLEVEL: warn
+      - DOCKER_LAUNCH_DEBUG=true
     tag:
       - latest
       - $$TAG
