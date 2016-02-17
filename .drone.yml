@@ -6,7 +6,6 @@ publish:
     password: $$DOCKER_PASSWORD
     email: ndelitski@gmail.com
     repo: ndelitski/confr-sidekick
-    storage_driver: overlay
     tag:
       - latest
       - $$TAG
