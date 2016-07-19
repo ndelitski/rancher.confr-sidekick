@@ -27,6 +27,8 @@ async function envSource() {
   const {
     CONFR_REDIS_HOST,
     CONFR_REDIS_PORT,
+    CONFR_REDIS_PASS,
+    CONFR_REDIS_TLS,
     CONFR_INTERVAL,
     CONFR_DOCKER_SOCKET
   } = process.env;
@@ -34,7 +36,9 @@ async function envSource() {
   return {
     redis: {
       host: CONFR_REDIS_HOST,
-      port: parseInt(CONFR_REDIS_PORT) || 6379
+      port: parseInt(CONFR_REDIS_PORT) || 6379,
+      password: CONFR_REDIS_PASS,
+      tls: CONFR_REDIS_TLS ? true : undefined
     },
     interval: parseInt(CONFR_INTERVAL) || 5000,
     docker: {
