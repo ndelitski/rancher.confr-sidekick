@@ -45,7 +45,8 @@ export default class RancherMetadataClient {
     return await this.getJson('self');
   }
   async getService() {
-    return (await this.get('self/container/labels/io.rancher.stack_service.name')).split('/')[1];
+    const labels = await this.getJson('self/container/labels');
+    return labels['io.confr.service_name'] || (await this.get('self/container/labels/io.rancher.stack_service.name')).split('/')[1];
   }
   async getVersion() {
     const labels = await this.getJson('self/container/labels');
